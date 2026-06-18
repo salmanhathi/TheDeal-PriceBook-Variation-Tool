@@ -1,1 +1,426 @@
-<form method="post" enctype="multipart/form-data"> <input type="file" name="file"> <input type="submit" value="Upload and generate XML"> </form>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pricebook Generator — The Deal Outlet</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:   #0d0d0d;
+      --white:   #ffffff;
+      --gray-50: #f7f7f7;
+      --gray-100:#efefef;
+      --gray-300:#cccccc;
+      --gray-500:#888888;
+      --gray-700:#444444;
+      --accent:  #e8001d;   /* TDO red from their branding */
+      --accent-dark: #b8001a;
+      --radius:  12px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--gray-50);
+      color: var(--black);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-100);
+      padding: 18px 40px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    header img {
+      height: 36px;
+      width: auto;
+    }
+
+    header .divider {
+      width: 1px;
+      height: 28px;
+      background: var(--gray-300);
+    }
+
+    header span {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--gray-500);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    /* ── Main ── */
+    main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 24px;
+    }
+
+    .card {
+      background: var(--white);
+      border: 1px solid var(--gray-100);
+      border-radius: var(--radius);
+      padding: 48px;
+      width: 100%;
+      max-width: 520px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+    }
+
+    .card h1 {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--black);
+      margin-bottom: 6px;
+    }
+
+    .card p.subtitle {
+      font-size: 14px;
+      color: var(--gray-500);
+      margin-bottom: 36px;
+      line-height: 1.5;
+    }
+
+    /* ── Drop Zone ── */
+    .drop-zone {
+      border: 2px dashed var(--gray-300);
+      border-radius: var(--radius);
+      padding: 40px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+      background: var(--gray-50);
+    }
+
+    .drop-zone:hover,
+    .drop-zone.dragover {
+      border-color: var(--accent);
+      background: #fff5f5;
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .drop-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 14px;
+      background: var(--gray-100);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .drop-icon svg {
+      width: 22px;
+      height: 22px;
+      color: var(--gray-500);
+    }
+
+    .drop-zone .label {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--black);
+      margin-bottom: 4px;
+    }
+
+    .drop-zone .label span {
+      color: var(--accent);
+    }
+
+    .drop-zone .hint {
+      font-size: 12px;
+      color: var(--gray-500);
+    }
+
+    /* ── File selected state ── */
+    .file-info {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      background: #fff5f5;
+      border: 1px solid #fcc;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-top: 16px;
+    }
+
+    .file-info.visible { display: flex; }
+
+    .file-info svg {
+      flex-shrink: 0;
+      color: var(--accent);
+      width: 20px;
+      height: 20px;
+    }
+
+    .file-info .file-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--black);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-info .remove {
+      cursor: pointer;
+      color: var(--gray-500);
+      font-size: 18px;
+      line-height: 1;
+      background: none;
+      border: none;
+      padding: 0 4px;
+    }
+
+    .file-info .remove:hover { color: var(--accent); }
+
+    /* ── Submit button ── */
+    .btn {
+      display: block;
+      width: 100%;
+      margin-top: 24px;
+      padding: 14px;
+      background: var(--accent);
+      color: var(--white);
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      letter-spacing: 0.01em;
+    }
+
+    .btn:hover { background: var(--accent-dark); }
+    .btn:active { transform: scale(0.99); }
+
+    .btn:disabled {
+      background: var(--gray-300);
+      cursor: not-allowed;
+    }
+
+    /* ── Loading state ── */
+    .btn .spinner {
+      display: none;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto;
+    }
+
+    .btn.loading .btn-label { display: none; }
+    .btn.loading .spinner { display: block; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Steps hint ── */
+    .steps {
+      display: flex;
+      gap: 0;
+      margin-top: 32px;
+      padding-top: 28px;
+      border-top: 1px solid var(--gray-100);
+    }
+
+    .step {
+      flex: 1;
+      text-align: center;
+      position: relative;
+    }
+
+    .step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 14px;
+      right: 0;
+      width: 100%;
+      height: 1px;
+      background: var(--gray-100);
+      z-index: 0;
+    }
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--gray-100);
+      color: var(--gray-500);
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .step.active .step-num {
+      background: var(--accent);
+      color: var(--white);
+    }
+
+    .step-label {
+      font-size: 11px;
+      color: var(--gray-500);
+      font-weight: 500;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 12px;
+      color: var(--gray-300);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 560px) {
+      .card { padding: 32px 24px; }
+      header { padding: 16px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <img src="https://www.thedealoutlet.com/on/demandware.static/Sites-TheDealOutlet_AE-Site/-/default/dw95478736/images/logo.svg" alt="The Deal Outlet" />
+    <div class="divider"></div>
+    <span>Pricebook Generator</span>
+  </header>
+
+  <main>
+    <div class="card">
+      <h1>Generate Pricebook XML</h1>
+      <p class="subtitle">Upload your Excel file to convert it into a Salesforce Commerce Cloud pricebook XML.</p>
+
+      <form method="post" enctype="multipart/form-data" id="uploadForm">
+
+        <div class="drop-zone" id="dropZone">
+          <input type="file" name="file" id="fileInput" accept=".xls,.xlsx" />
+          <div class="drop-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+            </svg>
+          </div>
+          <p class="label"><span>Click to upload</span> or drag and drop</p>
+          <p class="hint">.XLS or .XLSX files only</p>
+        </div>
+
+        <div class="file-info" id="fileInfo">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+          </svg>
+          <span class="file-name" id="fileName">filename.xlsx</span>
+          <button type="button" class="remove" id="removeFile" title="Remove file">×</button>
+        </div>
+
+        <button type="submit" class="btn" id="submitBtn" disabled>
+          <span class="btn-label">Generate XML</span>
+          <div class="spinner"></div>
+        </button>
+
+      </form>
+
+      <div class="steps">
+        <div class="step active">
+          <div class="step-num">1</div>
+          <div class="step-label">Upload Excel</div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-label">Process</div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-label">Download XML</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>© The Deal Outlet — Internal Tool</footer>
+
+  <script>
+    const fileInput  = document.getElementById('fileInput');
+    const dropZone   = document.getElementById('dropZone');
+    const fileInfo   = document.getElementById('fileInfo');
+    const fileName   = document.getElementById('fileName');
+    const removeFile = document.getElementById('removeFile');
+    const submitBtn  = document.getElementById('submitBtn');
+    const uploadForm = document.getElementById('uploadForm');
+    const steps      = document.querySelectorAll('.step');
+
+    function showFile(file) {
+      fileName.textContent = file.name;
+      fileInfo.classList.add('visible');
+      submitBtn.disabled = false;
+      steps[0].classList.remove('active');
+      steps[1].classList.add('active');
+    }
+
+    function clearFile() {
+      fileInput.value = '';
+      fileInfo.classList.remove('visible');
+      submitBtn.disabled = true;
+      steps[1].classList.remove('active');
+      steps[0].classList.add('active');
+    }
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) showFile(fileInput.files[0]);
+    });
+
+    removeFile.addEventListener('click', clearFile);
+
+    // Drag and drop
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file && (file.name.endsWith('.xls') || file.name.endsWith('.xlsx'))) {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        fileInput.files = dt.files;
+        showFile(file);
+      }
+    });
+
+    // Loading state on submit
+    uploadForm.addEventListener('submit', () => {
+      submitBtn.classList.add('loading');
+      submitBtn.disabled = true;
+      steps[1].classList.remove('active');
+      steps[2].classList.add('active');
+    });
+  </script>
+
+</body>
+</html>
